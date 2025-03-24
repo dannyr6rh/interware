@@ -1,0 +1,20 @@
+---
+- name: Identificar equipos activos en la red usando ping
+  hosts: all
+  gather_facts: no
+  vars:
+    network_range: "192.168.1.0/24"
+
+  tasks:
+    - name: Ejecutar ping en el rango de red
+      ansible.builtin.ping:
+      delegate_to: "{{ item }}"
+      loop: "{{ range(1, 255) | map('regex_replace', '^', '192.168.1.') | list }}"
+      ignore_errors: yes
+      register: ping_results
+
+    - name: Mostrar equipos activos
+      ansible.builtin.debug:
+        msg: "Equipo activo: {{ item.item }}"
+      loop: "{{ ping_results.results }}"
+      when: item.ping == 'pong'

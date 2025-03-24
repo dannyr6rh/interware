@@ -1,0 +1,42 @@
+---
+- name: Recopilar información de la infraestructura de DataPower
+  hosts: datapower
+  gather_facts: no
+  vars:
+    output_file: "datapower_inventory.txt"  # Archivo de salida
+    datapower_user: "admin"
+    datapower_password: "password"
+
+  tasks:
+    - name: Obtener información básica del dispositivo
+      community.general.datapower_facts:
+        host: "{{ inventory_hostname }}"
+        user: "{{ datapower_user }}"
+        password: "{{ datapower_password }}"
+        gather_subset:
+          - system
+          - network
+          - domains
+      register: datapower_info
+
+    - name: Crear archivo de inventario
+      ansible.builtin.copy:
+        content: |
+          Información de DataPower - {{ inventory_hostname }}
+          ================================================
+          - Nombre del dispositivo: {{ datapower_info.system.name }}
+          - Versión del firmware: {{ datapower_info.system.firmware_version }}
+          - Estado de la CPU: {{ datapower_info.system.cpu_usage }}%
+          - Uso de memoria: {{ datapower_info.system.memory_usage }}%
+          - Interfaces de red:
+            {% for interface in datapower_info.network.interfaces %}
+            - {{ interface.name }}: {{ interface.ip }}/{{ interface.netmask }}
+            {% endfor %}
+          - Dominios configurados:
+            {% for domain in datapower_info.domains %}
+            - {{ domain.name }} (Estado: {{ domain.status }})
+            {% endfor %}
+        dest: "{{ output_file }}"
+        mode: '0644'
+      delegate_to: localhost
+      run_once: yes

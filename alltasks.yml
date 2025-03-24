@@ -1,0 +1,75 @@
+---
+- name: Configuración y balanceo de carga para IBM DataPower
+  hosts: localhost
+  gather_facts: no
+  tasks:
+
+    - name: Instalar nmap si no está presente
+      package:
+        name: nmap
+        state: present
+      become: yes
+
+    - name: Escanear la red en busca de dispositivos activos
+      command: "nmap -sn 192.168.1.0/24"
+      register: scan_output
+
+    - name: Extraer direcciones IP de los dispositivos detectados
+      set_fact:
+        detected_ips: "{{ scan_output.stdout | regex_findall('(?:\d{1,3}\.){3}\d{1,3}') }}"
+
+    - name: Mostrar las direcciones IP detectadas
+      debug:
+        msg: "Equipos detectados con IPs: {{ detected_ips }}"
+
+    - name: Configurar balanceo de carga en DataPower mediante XML Firewall
+      block:
+        - name: Crear configuración de balanceo
+          template:
+            src: datapower_load_balancer.xml.j2
+            dest: /tmp/datapower_load_balancer.xml
+
+        - name: Aplicar configuración en DataPower
+          uri:
+            url: "https://{{ datapower_host }}/mgmt/config" 
+            method: POST
+            user: "{{ datapower_user }}"
+            password: "{{ datapower_password }}"
+            body: "{{ lookup('file', '/tmp/datapower_load_balancer.xml') }}"
+            body_format: xml
+            validate_certs: no
+          register: dp_response
+
+        - name: Mostrar respuesta de DataPower
+          debug:
+            msg: "{{ dp_response }}"
+
+    - name: Configurar balanceo de carga en Nginx (opción externa)
+      block:
+        - name: Instalar Nginx
+          package:
+            name: nginx
+            state: present
+          become: yes
+
+        - name: Configurar Nginx con balanceo
+          template:
+            src: nginx_load_balancer.conf.j2
+            dest: /etc/nginx/conf.d/datapower_load_balancer.conf
+          notify: Reiniciar Nginx
+
+    - name: Configurar balanceo de carga con DNS Round-Robin
+      block:
+        - name: Agregar registros DNS para balanceo
+          lineinfile:
+            path: /etc/hosts
+            line: "192.168.1.10 datapower.local\n192.168.1.11 datapower.local"
+            state: present
+          become: yes
+
+  handlers:
+    - name: Reiniciar Nginx
+      service:
+        name: nginx
+        state: restarted
+      become: yes

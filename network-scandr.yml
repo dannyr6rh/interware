@@ -1,0 +1,26 @@
+---
+- name: Escanear la red para identificar equipos y sus IPs
+  hosts: localhost  # Se ejecuta en la máquina local
+  gather_facts: no
+  vars:
+    network_range: "192.168.1.0/24"  # Cambia esto por el rango de tu red
+    nmap_command: "nmap -sn {{ network_range }} -oG -"  # Comando para escanear la red
+
+  tasks:
+    - name: Ejecutar escaneo de red con nmap
+      ansible.builtin.shell: "{{ nmap_command }}"
+      register: scan_results
+
+    - name: Filtrar y mostrar las IPs de los equipos activos
+      ansible.builtin.set_fact:
+        active_hosts: >-
+          {{
+            scan_results.stdout_lines
+            | select('search', 'Up')
+            | map('regex_replace', '^Host: (.+) .+$', '\\1')
+            | list
+          }}
+
+    - name: Mostrar los equipos activos y sus IPs
+      ansible.builtin.debug:
+        var: active_hosts
