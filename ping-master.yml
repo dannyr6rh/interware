@@ -1,0 +1,29 @@
+---
+- name: Hacer ping a un segmento de red y guardar los dispositivos en línea
+  hosts: localhost
+  gather_facts: no
+  vars:
+    network_range: "192.168.1.0/24"  # Segmento de red a escanear
+    output_file: "/tmp/dispositivos_en_linea.txt"  # Archivo de salida
+
+  tasks:
+    - name: Generar lista de IPs en el rango de red
+      set_fact:
+        ip_list: "{{ range(1, 255) | map('regex_replace', '^', '192.168.1.') | list }}"
+
+    - name: Hacer ping a las direcciones IP
+      ansible.builtin.ping:
+      delegate_to: "{{ item }}"
+      loop: "{{ ip_list }}"
+      ignore_errors: yes
+      register: ping_results
+
+    - name: Filtrar las IPs activas
+      set_fact:
+        active_ips: "{{ ping_results.results | selectattr('ping', 'equalto', 'pong') | map(attribute='item') | list }}"
+
+    - name: Guardar dispositivos en línea en un archivo
+      ansible.builtin.copy:
+        content: "{{ active_ips | join('\n') }}"
+        dest: "{{ output_file }}"
+        mode: '0644'
