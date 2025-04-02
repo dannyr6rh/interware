@@ -3,13 +3,13 @@
   hosts: all
   gather_facts: no
   vars:
-    network_range: "192.168.1.0/24"
+    network_range: "192.168.180.0/24"
 
   tasks:
     - name: Ejecutar ping en el rango de red
       ansible.builtin.ping:
       delegate_to: "{{ item }}"
-      loop: "{{ range(1, 255) | map('regex_replace', '^', '192.168.1.') | list }}"
+      loop: "{{ range(1, 255) | map('regex_replace', '^', '192.168.180.') | list }}"
       ignore_errors: yes
       register: ping_results
 
