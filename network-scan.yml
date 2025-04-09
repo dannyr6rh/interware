@@ -12,6 +12,6 @@
       delegate_to: localhost
       run_once: false
       lineinfile:
-        path: "./results/ping_output.txt"
+        path: "./results/ping_output_networl_scan.txt"
         line: "{{ inventory_hostname }} - {{ 'ÉXITO' if ping_result.ping == 'pong' else 'FALLÓ' }}"
         create: yes
