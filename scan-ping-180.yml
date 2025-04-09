@@ -6,7 +6,7 @@
     base_ip: "180.160.1"
     start_range: 1
     end_range: 254
-    output_file: "./results/ping_output.txt"
+    output_file: "./results/ping_output_scan-ping-180.txt"
 
   tasks:
 
