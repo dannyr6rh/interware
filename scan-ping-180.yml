@@ -1,20 +1,44 @@
 ---
-- name: Identificar equipos activos en la red usando ping
-  hosts: all
-  gather_facts: no
+- name: Hacer ping a una red completa y guardar resultados
+  hosts: localhost
+  gather_facts: false
   vars:
-    network_range: "192.168.1.0/24"
+    base_ip: "192.168.180"
+    start_range: 1
+    end_range: 254
+    output_file: "./results/ping_output.txt"
 
   tasks:
-    - name: Ejecutar ping en el rango de red
-      ansible.builtin.ping:
-      delegate_to: "{{ item }}"
-      loop: "{{ range(1, 255) | map('regex_replace', '^', '192.168.1.') | list }}"
-      ignore_errors: yes
-      register: ping_results
 
-    - name: Mostrar equipos activos
-      ansible.builtin.debug:
-        msg: "Equipo activo: {{ item.item }}"
-      loop: "{{ ping_results.results }}"
-      when: item.ping == 'pong'
+    - name: Asegurar que el directorio results existe
+      file:
+        path: ./results
+        state: directory
+        mode: '0755'
+
+    - name: Limpiar archivo de salida si existe
+      file:
+        path: "{{ output_file }}"
+        state: absent
+
+    - name: Generar lista de IPs del segmento
+      set_fact:
+        ip_list: "{{ query('sequence', start=start_range, end=end_range) | map('regex_replace', '^', base_ip + '.') | list }}"
+
+    - name: Hacer ping a cada IP y guardar resultado
+      loop: "{{ ip_list }}"
+      vars:
+        ip: "{{ item }}"
+      block:
+        - name: Hacer ping a la IP {{ ip }}
+          shell: ping -c 1 -W 1 {{ ip }}
+          register: ping_result
+          ignore_errors: true
+
+        - name: Guardar resultado en archivo
+          copy:
+            content: "{{ ip }} - {{ 'ÉXITO' if ping_result.rc == 0 else 'FALLÓ' }}\n"
+            dest: "{{ output_file }}"
+            force: no
+          when: ping_result is defined
+          delegate_to: localhost
