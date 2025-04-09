@@ -3,7 +3,7 @@
   hosts: localhost
   gather_facts: false
   vars:
-    base_ip: "192.168.180"
+    base_ip: "192.168.1"
     start_range: 1
     end_range: 254
     output_file: "./results/ping_output.txt"
