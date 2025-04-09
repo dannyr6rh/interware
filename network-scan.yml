@@ -1,22 +1,17 @@
 ---
-- name: Escaneo de red para identificar equipos e IPs
-  hosts: localhost
-  gather_facts: no
+- name: Realizar ping y guardar salida sin sobrescribir
+  hosts: all
+  gather_facts: false
+
   tasks:
-    - name: Instalar nmap si no está presente
-      package:
-        name: nmap
-        state: present
-      become: yes
+    - name: Hacer ping
+      ping:
+      register: ping_result
 
-    - name: Escanear la red en busca de dispositivos activos
-      command: "nmap -sn 192.168.1.0/24"
-      register: scan_output
-
-    - name: Extraer direcciones IP de los dispositivos detectados
-      set_fact:
-        detected_ips: "{{ scan_output.stdout | regex_findall('(?:\d{1,3}\.){3}\d{1,3}') }}"
-
-    - name: Mostrar las direcciones IP detectadas
-      debug:
-        msg: "Equipos detectados con IPs: {{ detected_ips }}"
+    - name: Guardar línea en archivo local sin sobrescribir
+      delegate_to: localhost
+      run_once: false
+      lineinfile:
+        path: "./results/ping_output.txt"
+        line: "{{ inventory_hostname }} - {{ 'ÉXITO' if ping_result.ping == 'pong' else 'FALLÓ' }}"
+        create: yes
