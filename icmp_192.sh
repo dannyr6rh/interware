@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Configura tu segmento
-SEGMENTO="192.168.153"
-INVENTARIO="inventario_icmp.ini"
-RESULTADO="icmp_resultado.txt"
+SEGMENTO="192.168.1"
+INVENTARIO="inventario_icmp_192.ini"
+RESULTADO="icmp_resultado_192.txt"
 
 # Limpia inventario anterior
 echo "[icmp_targets]" > $INVENTARIO
