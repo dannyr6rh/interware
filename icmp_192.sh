@@ -2,7 +2,7 @@
 
 # Configura tu segmento
 SEGMENTO="192.168.1"
-INVENTARIO="inventario_icmp_192.ini"
+INVENTARIO="inventario_final192.ini"
 RESULTADO="icmp_resultado_192.txt"
 
 # Limpia inventario anterior
