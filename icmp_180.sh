@@ -2,8 +2,8 @@
 
 # Configura tu segmento
 SEGMENTO="180.160.1"
-INVENTARIO="inventario_icmp.ini"
-RESULTADO="icmp_resultado.txt"
+INVENTARIO=" inventario_final180.ini"
+RESULTADO="icmp_resultado_180.txt"
 
 # Limpia inventario anterior
 echo "[icmp_targets]" > $INVENTARIO
