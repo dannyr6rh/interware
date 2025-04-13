@@ -1,0 +1,16 @@
+- name: ICMP Ping scan
+  hosts: icmp_targets
+  gather_facts: no
+  tasks:
+    - name: Ejecutar ping ICMP
+      shell: ping -c 1 -W 1 {{ inventory_hostname }}
+      register: ping_output
+      ignore_errors: yes
+
+    - name: Guardar salida si responde
+      local_action:
+        module: lineinfile
+        path: icmp_resultado.txt
+        create: yes
+        line: "{{ inventory_hostname }} responde"
+      when: ping_output.rc == 0
